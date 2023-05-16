@@ -21,6 +21,9 @@ typedef unsigned char u8;
 
 
 
+u8** allocate_matrix(int num_rows, int row_length);
+void free_matrix(u8** matrix, int num_rows);
+
 void print_array(
     const char* name,
     const u8* array,

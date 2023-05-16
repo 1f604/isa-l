@@ -73,6 +73,65 @@ void test_random(
     test_helper(k, m, p, nerrs, len, encode_matrix, frag_err_list, frag_ptrs);
 }
 
+/**
+ * Usage:
+ *
+ * u8* output_buffer = allocate_matrix(p, len);
+ * recover_fragments_progressive(k,m,p,nerrs, len, encode_matrix, frag_err_list, output_buffer, frag_ptrs);
+ * free_matrix(output_buffer);
+ *
+*/
+int recover_fragments_progressive(
+            int k,
+            int m,
+            int p,
+            int nerrs,
+            int len,
+            const u8 *encode_matrix,
+            const u8 *frag_err_list,
+            u8** output_buffer, // this is where the recovered shards will be stored
+            u8 const * const * const frag_ptrs)
+{
+    u8 *decode_matrix = malloc(m * k);
+    u8 *g_tbls = malloc(k * p * 32);
+    u8 decode_index[MMAX];
+    const u8 * recover_srcs[KMAX];
+    
+
+
+    if (encode_matrix == NULL || decode_matrix == NULL
+        || g_tbls == NULL) {
+        printf("Test failure! Error with malloc\n");
+        return -1;
+    }
+
+    printf(" recover %d fragments\n", nerrs);
+
+    // Find a decode matrix to regenerate all erasures from remaining frags
+    int ret = gf_gen_decode_matrix_simple(encode_matrix, frag_err_list, 
+                                            decode_matrix, decode_index,
+                                            nerrs, k, m);
+    if (ret != 0) {
+        printf("Fail on generate decode matrix\n");
+        exit(-1);
+    }
+    // Pack recovery array pointers as list of valid fragments
+    for (int i = 0; i < k; i++)
+        recover_srcs[i] = frag_ptrs[decode_index[i]]; // we know that ec_encode_data doesn't modify the data...
+
+    // Recover data
+    ec_init_tables(k, nerrs, decode_matrix, g_tbls);
+
+    for (int i = 0; i < k; i++){
+        ec_encode_data_update(len, k, nerrs, i, (const u8*)g_tbls, (const u8*)recover_srcs[i], output_buffer);
+    }
+
+    return 0;
+}
+
+
+
+
 int test_helper(
             int k,
             int m,

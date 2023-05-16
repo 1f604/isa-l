@@ -185,12 +185,12 @@ u8** allocate_matrix(int num_rows, int row_length){ // num_rows should be p
     u8 **matrix;
 
     // The following is generic code that works regardless of the type of the elements in the matrix
-    if (NULL == (matrix = malloc(num_rows * sizeof(*matrix)))) {
+    if (NULL == (matrix = malloc(num_rows * sizeof(u8*)))) {
         printf("alloc error: Failed to allocate matrix\n");
         exit(-1);
     }
     for (int i = 0; i < num_rows; i++) {
-        if (NULL == (matrix[i] = malloc(row_length * sizeof(**matrix)))) {
+        if (NULL == (matrix[i] = malloc(row_length * sizeof(u8)))) {
             printf("alloc error: Failed to allocate row in matrix\n");
             exit(-1);
         }

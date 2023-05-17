@@ -42,7 +42,7 @@ void test_exhaustive(
             u8 const * const * const frag_ptrs)
 {
     // Fragment buffer pointers
-    u8 frag_err_list[MMAX];
+    u8 frag_err_list[MMAX] = {0};
     int nerrs = 1;
     for (int i = 0; i < m; i++){
         frag_err_list[0] = i;
@@ -61,9 +61,9 @@ void test_random(
             u8 const * const * const frag_ptrs)
 {
     // Fragment buffer pointers
-    u8 frag_err_list[MMAX];
+    u8 frag_err_list[MMAX] = {0};
     // Generate errors
-    u8 shard_numbers[MMAX];
+    u8 shard_numbers[MMAX] = {0};
     for (int i = 0; i < MMAX; i++){
         shard_numbers[i] = i;
     }
@@ -167,7 +167,7 @@ int test_helper(
 
     if (encode_matrix == NULL || decode_matrix == NULL
         || g_tbls == NULL) {
-        printf("Test failure! Error with malloc\n");
+        printf("Test failure! Error with calloc\n");
         return -1;
     }
 
@@ -250,8 +250,8 @@ int main(int argc, char *argv[])
 	char* filepath = NULL;
 
     // Fragment buffer pointers
-    u8 *frag_ptrs_encode[MMAX];
-    u8 *frag_ptrs_encode_update[MMAX];
+    u8 *frag_ptrs_encode[MMAX] = {0};
+    u8 *frag_ptrs_encode_update[MMAX] = {0};
 
 
     // Coefficient matrices
@@ -304,20 +304,20 @@ int main(int argc, char *argv[])
     printf("ec_simple_example:\n");
 
     // Allocate coding matrices
-    encode_matrix = malloc(m * k);
-    g_tbls = malloc(k * p * 32);
+    encode_matrix = calloc(m * k, sizeof(u8));
+    g_tbls = calloc(k * p * 32, sizeof(u8));
 
     if (encode_matrix == NULL || g_tbls == NULL) {
-        printf("Test failure! Error with malloc\n");
+        printf("Test failure! Error with calloc\n");
         return -1;
     }
     // Allocate the src & parity buffers
     for (int i = 0; i < m; i++) {
-        if (NULL == (frag_ptrs_encode[i] = malloc(len))) {
+        if (NULL == (frag_ptrs_encode[i] = calloc(len, sizeof(u8)))) {
             printf("alloc 1 error: Fail\n");
             return -1;
         }
-        if (NULL == (frag_ptrs_encode_update[i] = malloc(len))) {
+        if (NULL == (frag_ptrs_encode_update[i] = calloc(len, sizeof(u8)))) {
             printf("alloc 2 error: Fail\n");
             return -1;
         }

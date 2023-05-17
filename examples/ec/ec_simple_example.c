@@ -76,7 +76,7 @@ void test_random(
 /**
  * Usage:
  *
- * u8* output_buffer = allocate_matrix(p, len);
+ * u8** output_buffer = calloc_matrix(p, len);
  * recover_fragments_progressive(k,m,p,nerrs, len, encode_matrix, frag_err_list, output_buffer, frag_ptrs);
  * free_matrix(output_buffer);
  *
@@ -207,6 +207,10 @@ int test_helper(
 
     print_matrix("Recovered Matrix recover_outp_encode", (const u8**)recover_outp_encode, nerrs, len);
     print_matrix("Recovered Matrix recover_outp_encode_update", (const u8**)recover_outp_encode_update, nerrs, len);
+
+
+    free_matrix(recover_outp_encode, p);
+    free_matrix(recover_outp_encode_update, p);
 
     printf(" } done all: Pass\n");
     return 0;

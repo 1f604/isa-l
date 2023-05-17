@@ -34,8 +34,8 @@ examples += examples/ec/ec_simple_example
 #examples += examples/ec/ec_piggyback_example
 
 examples += examples/ec/create_ecc
-examples += examples/ec/test_ecc
-examples += examples/ec/recover_ecc
+#examples += examples/ec/test_ecc
+#examples += examples/ec/recover_ecc
 
 
 

@@ -94,6 +94,63 @@ void print_matrix(
 
 
 
+void test_exhaustive(
+            int k,
+            int m,
+            int p,
+            int len,
+            const u8 *encode_matrix,
+            u8 const * const * const frag_ptrs);
+
+void test_random(
+            int k,
+            int m,
+            int p,
+            int nerrs,
+            int len,
+            const u8 *encode_matrix,
+            u8 const * const * const frag_ptrs);
+
+/**
+ * Usage:
+ *
+ * u8** output_buffer = calloc_matrix(p, len);
+ * recover_fragments_progressive(k,m,p,nerrs, len, encode_matrix, frag_err_list, output_buffer, frag_ptrs);
+ * free_matrix(output_buffer);
+ *
+*/
+int recover_fragments_progressive(
+            int k,
+            int m,
+            int p,
+            int nerrs,
+            int len,
+            const u8 *encode_matrix,
+            const u8 *frag_err_list,
+            u8** output_buffer, // this is where the recovered shards will be stored
+            u8 const * const * const frag_ptrs);
+
+
+
+void recover_data(int k, int m, int p, int nerrs, int len,
+                    const u8 *encode_matrix,                    // input vector
+                    const u8 * const * const frag_ptrs,         // input matrix
+                    const u8 *frag_err_list,                    // input vector
+                    u8** output_matrix,                         // output matrix, MUST BE ZERO-INITIALIZED BY CALLER!!!!!!!!!!!
+                    int use_progressive
+);
+
+
+int test_helper(
+            int k,
+            int m,
+            int p,
+            int nerrs,
+            int len,
+            const u8 *encode_matrix,
+            const u8 *frag_err_list,
+            u8 const * const * const frag_ptrs);
+
 
 
 

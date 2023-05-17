@@ -205,3 +205,209 @@ void free_matrix(u8** matrix, int num_rows){
     }
     free(matrix);
 }
+
+
+void test_exhaustive(
+            int k,
+            int m,
+            int p,
+            int len,
+            const u8 *encode_matrix,
+            u8 const * const * const frag_ptrs)
+{
+    // Fragment buffer pointers
+    u8 frag_err_list[MMAX] = {0};
+    int nerrs = 1;
+    for (int i = 0; i < m; i++){
+        frag_err_list[0] = i;
+        test_helper(k, m, p, nerrs, len, encode_matrix, frag_err_list, frag_ptrs);
+    }
+}
+
+
+void test_random(
+            int k,
+            int m,
+            int p,
+            int nerrs,
+            int len,
+            const u8 *encode_matrix,
+            u8 const * const * const frag_ptrs)
+{
+    // Fragment buffer pointers
+    u8 frag_err_list[MMAX] = {0};
+    // Generate errors
+    u8 shard_numbers[MMAX] = {0};
+    for (int i = 0; i < MMAX; i++){
+        shard_numbers[i] = i;
+    }
+    choose_without_replacement(shard_numbers, frag_err_list, MMAX, MMAX, m, nerrs);
+    print_array("frag_err_list", frag_err_list, nerrs);
+
+    test_helper(k, m, p, nerrs, len, encode_matrix, frag_err_list, frag_ptrs);
+}
+
+/**
+ * Usage:
+ *
+ * u8** output_buffer = calloc_matrix(p, len);
+ * recover_fragments_progressive(k,m,p,nerrs, len, encode_matrix, frag_err_list, output_buffer, frag_ptrs);
+ * free_matrix(output_buffer);
+ *
+*/
+int recover_fragments_progressive(
+            int k,
+            int m,
+            int p,
+            int nerrs,
+            int len,
+            const u8 *encode_matrix,
+            const u8 *frag_err_list,
+            u8** output_buffer, // this is where the recovered shards will be stored
+            u8 const * const * const frag_ptrs)
+{
+    u8 *decode_matrix = calloc(m * k, sizeof(u8));
+    u8 *g_tbls = calloc(k * p * 32, sizeof(u8));
+    u8 decode_index[MMAX];
+    const u8 * recover_srcs[KMAX];
+    
+
+
+    if (encode_matrix == NULL || decode_matrix == NULL
+        || g_tbls == NULL) {
+        printf("Test failure! Error with calloc\n");
+        exit(-1);
+    }
+
+    printf(" recover %d fragments\n", nerrs);
+
+    // Find a decode matrix to regenerate all erasures from remaining frags
+    int ret = gf_gen_decode_matrix_simple(encode_matrix, frag_err_list, 
+                                            decode_matrix, decode_index,
+                                            nerrs, k, m);
+    if (ret != 0) {
+        printf("Fail on generate decode matrix\n");
+        exit(-1);
+    }
+    // Pack recovery array pointers as list of valid fragments
+    for (int i = 0; i < k; i++)
+        recover_srcs[i] = frag_ptrs[decode_index[i]]; // we know that ec_encode_data doesn't modify the data...
+
+    // Recover data
+    ec_init_tables(k, nerrs, decode_matrix, g_tbls);
+
+    for (int i = 0; i < k; i++){
+        ec_encode_data_update(len, k, nerrs, i, (const u8*)g_tbls, (const u8*)recover_srcs[i], output_buffer);
+    }
+
+    return 0;
+}
+
+
+
+void recover_data(int k, int m, int p, int nerrs, int len,
+                    const u8 *encode_matrix,                    // input vector
+                    const u8 * const * const frag_ptrs,         // input matrix
+                    const u8 *frag_err_list,                    // input vector
+                    u8** output_matrix,                         // output matrix, MUST BE ZERO-INITIALIZED BY CALLER!!!!!!!!!!!
+                    int use_progressive
+){
+    u8 *decode_matrix = calloc(m * k, sizeof(u8));
+    u8 *g_tbls = calloc(k * p * 32, sizeof(u8));
+    u8 decode_index[MMAX] = {0};
+    const u8 * recover_srcs[KMAX] = {0};
+
+    if (encode_matrix == NULL || decode_matrix == NULL
+        || g_tbls == NULL) {
+        printf("Test failure! Error with calloc\n");
+        exit(-1);
+    }
+
+    printf(" recover %d fragments\n", nerrs);
+
+    // Find a decode matrix to regenerate all erasures from remaining frags
+    int ret = gf_gen_decode_matrix_simple(encode_matrix, frag_err_list,
+                                            decode_matrix, decode_index,
+                                            nerrs, k, m);
+    if (ret != 0) {
+        printf("Fail on generate decode matrix\n");
+        exit(-1);
+    }
+    // Pack recovery array pointers as list of valid fragments
+    for (int i = 0; i < k; i++)
+        recover_srcs[i] = frag_ptrs[decode_index[i]]; // we know that ec_encode_data doesn't modify the data...
+
+    // Recover data
+    ec_init_tables(k, nerrs, (const u8*)decode_matrix, g_tbls);
+
+    if (use_progressive) {
+        for (int i = 0; i < k; i++){
+            ec_encode_data_update(len, k, nerrs, i, (const u8*)g_tbls, (const u8*)recover_srcs[i], output_matrix);
+        }
+    } else {
+        ec_encode_data(len, k, nerrs, (const u8*)g_tbls, (const u8* const *)recover_srcs, output_matrix);
+    }
+}
+
+
+int test_helper(
+            int k,
+            int m,
+            int p,
+            int nerrs,
+            int len,
+            const u8 *encode_matrix,
+            const u8 *frag_err_list,
+            u8 const * const * const frag_ptrs)
+{
+    // Allocate buffers for recovered data
+    u8 **recover_outp_encode = calloc_matrix(p, len);
+    u8 **recover_outp_encode_update = calloc_matrix(p, len);
+    
+    // Recover data
+    recover_data(k, m, p, nerrs, len,
+                    encode_matrix,
+                    frag_ptrs,
+                    frag_err_list,
+                    recover_outp_encode,
+                    0);
+
+    recover_data(k, m, p, nerrs, len,
+                    encode_matrix,
+                    frag_ptrs,
+                    frag_err_list,
+                    recover_outp_encode_update,
+                    1);
+
+    // Check that recovered buffers are the same as original
+    printf(" check recovery of block {");
+    for (int i = 0; i < nerrs; i++) {
+        printf(" %d", frag_err_list[i]);
+        if (memcmp(recover_outp_encode[i], frag_ptrs[frag_err_list[i]], len)) {
+            printf(" Fail erasure recovery %d, frag %d\n", i, frag_err_list[i]);
+            exit(-1);
+        }
+    }
+
+    // Check that buffers recovered via encode are the same as those recovered via update
+    printf(" Comparing encode vs encode_update {");
+    for (int i = 0; i < nerrs; i++) {
+        printf(" %d", frag_err_list[i]);
+        if (memcmp(recover_outp_encode_update[i], frag_ptrs[frag_err_list[i]], len)) {
+            printf(" Fail erasure recovery %d, frag %d\n", i, frag_err_list[i]);
+            exit(-1);
+        }
+    }
+
+
+    print_matrix("Recovered Matrix recover_outp_encode", (const u8**)recover_outp_encode, nerrs, len);
+    print_matrix("Recovered Matrix recover_outp_encode_update", (const u8**)recover_outp_encode_update, nerrs, len);
+
+
+    free_matrix(recover_outp_encode, p);
+    free_matrix(recover_outp_encode_update, p);
+
+    printf(" } done all: Pass\n");
+    return 0;
+}
+

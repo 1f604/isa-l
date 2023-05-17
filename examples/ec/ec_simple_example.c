@@ -102,7 +102,7 @@ int recover_fragments_progressive(
     if (encode_matrix == NULL || decode_matrix == NULL
         || g_tbls == NULL) {
         printf("Test failure! Error with calloc\n");
-        return -1;
+        exit(-1);
     }
 
     printf(" recover %d fragments\n", nerrs);
@@ -132,6 +132,7 @@ int recover_fragments_progressive(
 
 
 
+
 int test_helper(
             int k,
             int m,
@@ -150,15 +151,10 @@ int test_helper(
     u8 decode_index[MMAX] = {0};
     const u8 * recover_srcs[KMAX] = {0};
     
-    
-
-
-
-
     if (encode_matrix == NULL || decode_matrix == NULL
         || g_tbls == NULL) {
         printf("Test failure! Error with calloc\n");
-        return -1;
+        exit(-1);
     }
 
     printf(" recover %d fragments\n", nerrs);
@@ -182,6 +178,22 @@ int test_helper(
     for (int i = 0; i < k; i++){
         ec_encode_data_update(len, k, nerrs, i, (const u8*)g_tbls, (const u8*)recover_srcs[i], recover_outp_encode_update);
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     // Check that recovered buffers are the same as original
@@ -303,17 +315,17 @@ int main(int argc, char *argv[])
 
     if (encode_matrix == NULL || g_tbls == NULL) {
         printf("Test failure! Error with calloc\n");
-        return -1;
+        exit(-1);
     }
     // Allocate the src & parity buffers
     for (int i = 0; i < m; i++) {
         if (NULL == (frag_ptrs_encode[i] = calloc(len, sizeof(u8)))) {
             printf("alloc 1 error: Fail\n");
-            return -1;
+            exit(-1);
         }
         if (NULL == (frag_ptrs_encode_update[i] = calloc(len, sizeof(u8)))) {
             printf("alloc 2 error: Fail\n");
-            return -1;
+            exit(-1);
         }
     }
 

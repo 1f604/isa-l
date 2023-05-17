@@ -142,8 +142,9 @@ int test_helper(
             const u8 *frag_err_list,
             u8 const * const * const frag_ptrs)
 {
-    u8 *recover_outp_encode[KMAX] = {0};
-    u8 *recover_outp_encode_update[KMAX] = {0};
+    // Allocate buffers for recovered data
+    u8 **recover_outp_encode = calloc_matrix(p, len);
+    u8 **recover_outp_encode_update = calloc_matrix(p, len);
     u8 *decode_matrix = calloc(m * k, sizeof(u8));
     u8 *g_tbls = calloc(k * p * 32, sizeof(u8));
     u8 decode_index[MMAX] = {0};
@@ -151,17 +152,6 @@ int test_helper(
     
     
 
-    // Allocate buffers for recovered data
-    for (int i = 0; i < p; i++) {
-        if (NULL == (recover_outp_encode[i] = malloc(len))) {
-            printf("alloc error 1: Fail\n");
-            return -1;
-        }
-        if (NULL == (recover_outp_encode_update[i] = malloc(len))) {
-            printf("alloc error 2: Fail\n");
-            return -1;
-        }
-    }
 
 
 

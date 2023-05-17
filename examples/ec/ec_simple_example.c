@@ -135,8 +135,8 @@ void recover_data(int k, int m, int p, int nerrs, int len,
                     const u8 *encode_matrix,                    // input vector
                     const u8 * const * const frag_ptrs,         // input matrix
                     const u8 *frag_err_list,                    // input vector
-                    u8** recover_outp_encode,                   // output matrix
-                    u8** recover_outp_encode_update             // output matrix, MUST BE ZERO-INITIALIZED BY CALLER!!!!!!!!!!!
+                    u8** output_matrix,                         // output matrix, MUST BE ZERO-INITIALIZED BY CALLER!!!!!!!!!!!
+                    int use_progressive
 ){
     u8 *decode_matrix = calloc(m * k, sizeof(u8));
     u8 *g_tbls = calloc(k * p * 32, sizeof(u8));
@@ -165,10 +165,13 @@ void recover_data(int k, int m, int p, int nerrs, int len,
 
     // Recover data
     ec_init_tables(k, nerrs, (const u8*)decode_matrix, g_tbls);
-    ec_encode_data(len, k, nerrs, (const u8*)g_tbls, (const u8* const *)recover_srcs, recover_outp_encode);
 
-    for (int i = 0; i < k; i++){
-        ec_encode_data_update(len, k, nerrs, i, (const u8*)g_tbls, (const u8*)recover_srcs[i], recover_outp_encode_update);
+    if (use_progressive) {
+        for (int i = 0; i < k; i++){
+            ec_encode_data_update(len, k, nerrs, i, (const u8*)g_tbls, (const u8*)recover_srcs[i], output_matrix);
+        }
+    } else {
+        ec_encode_data(len, k, nerrs, (const u8*)g_tbls, (const u8* const *)recover_srcs, output_matrix);
     }
 }
 
@@ -193,7 +196,14 @@ int test_helper(
                     frag_ptrs,
                     frag_err_list,
                     recover_outp_encode,
-                    recover_outp_encode_update);
+                    0);
+
+    recover_data(k, m, p, nerrs, len,
+                    encode_matrix,
+                    frag_ptrs,
+                    frag_err_list,
+                    recover_outp_encode_update,
+                    1);
 
     // Check that recovered buffers are the same as original
     printf(" check recovery of block {");

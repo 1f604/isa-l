@@ -131,7 +131,7 @@ int recover_fragments_progressive(
 
 
 
-void recover_data(int k, int nerrs, int len, u8* g_tbls, u8* decode_matrix, const u8** recover_srcs, u8** recover_outp_encode, u8** recover_outp_encode_update,
+void recover_data(int k, int nerrs, int len, u8* g_tbls, const u8* decode_matrix, const u8** recover_srcs, u8** recover_outp_encode, u8** recover_outp_encode_update,
                     u8 const * const * const frag_ptrs, u8* decode_index
 ){
     // Pack recovery array pointers as list of valid fragments
@@ -139,7 +139,7 @@ void recover_data(int k, int nerrs, int len, u8* g_tbls, u8* decode_matrix, cons
         recover_srcs[i] = frag_ptrs[decode_index[i]]; // we know that ec_encode_data doesn't modify the data...
 
     // Recover data
-    ec_init_tables(k, nerrs, decode_matrix, g_tbls);
+    ec_init_tables(k, nerrs, (const u8*)decode_matrix, g_tbls);
     ec_encode_data(len, k, nerrs, (const u8*)g_tbls, (const u8* const *)recover_srcs, recover_outp_encode);
 
     for (int i = 0; i < k; i++){

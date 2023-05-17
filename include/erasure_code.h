@@ -71,7 +71,7 @@ extern "C" {
  * @returns none
  */
 
-void ec_init_tables(int k, int rows, unsigned char* a, unsigned char* gftbls);
+void ec_init_tables(int k, int rows, const unsigned char* a, unsigned char* gftbls);
 
 /**
  * @brief Generate or decode erasure codes on blocks of data, runs appropriate version.

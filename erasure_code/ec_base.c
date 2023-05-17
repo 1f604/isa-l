@@ -32,7 +32,7 @@
 #include "erasure_code.h"
 #include "ec_base.h"		// for GF tables
 
-void ec_init_tables(int k, int rows, unsigned char *a, unsigned char *g_tbls)
+void ec_init_tables(int k, int rows, const unsigned char *a, unsigned char *g_tbls)
 {
 	int i, j;
 

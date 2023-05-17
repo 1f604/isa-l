@@ -171,3 +171,9 @@ doc: isa-l.h
 	(cat Doxyfile; echo 'PROJECT_NUMBER=${VERSION}') | doxygen -
 	$(MAKE) -C generated_doc/latex &> generated_doc/latex_build_api.log
 	cp generated_doc/latex/refman.pdf isa-l_api_${VERSION}.pdf
+
+
+#CFLAGS += -fsanitize=undefined
+
+#CFLAGS += -fsanitize=address
+#CFLAGS += -static-libasan

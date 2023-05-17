@@ -131,7 +131,14 @@ int recover_fragments_progressive(
 
 
 
-void recover_data(int k, int nerrs, int len, u8* g_tbls, u8* decode_matrix, const u8** recover_srcs, u8** recover_outp_encode, u8** recover_outp_encode_update){
+void recover_data(int k, int nerrs, int len, u8* g_tbls, u8* decode_matrix, const u8** recover_srcs, u8** recover_outp_encode, u8** recover_outp_encode_update,
+                    u8 const * const * const frag_ptrs, u8* decode_index
+){
+    // Pack recovery array pointers as list of valid fragments
+    for (int i = 0; i < k; i++)
+        recover_srcs[i] = frag_ptrs[decode_index[i]]; // we know that ec_encode_data doesn't modify the data...
+
+    // Recover data
     ec_init_tables(k, nerrs, decode_matrix, g_tbls);
     ec_encode_data(len, k, nerrs, (const u8*)g_tbls, (const u8* const *)recover_srcs, recover_outp_encode);
 
@@ -175,12 +182,8 @@ int test_helper(
         printf("Fail on generate decode matrix\n");
         exit(-1);
     }
-    // Pack recovery array pointers as list of valid fragments
-    for (int i = 0; i < k; i++)
-        recover_srcs[i] = frag_ptrs[decode_index[i]]; // we know that ec_encode_data doesn't modify the data...
-
     // Recover data
-    recover_data(k, nerrs, len, g_tbls, decode_matrix, recover_srcs, recover_outp_encode, recover_outp_encode_update);
+    recover_data(k, nerrs, len, g_tbls, decode_matrix, recover_srcs, recover_outp_encode, recover_outp_encode_update, frag_ptrs, decode_index);
 
 
 

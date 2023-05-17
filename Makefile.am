@@ -175,5 +175,5 @@ doc: isa-l.h
 
 #CFLAGS += -fsanitize=undefined
 
-CFLAGS += -fsanitize=address
-CFLAGS += -static-libasan -g
+#CFLAGS += -fsanitize=address
+#CFLAGS += -static-libasan

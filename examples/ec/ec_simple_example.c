@@ -51,7 +51,7 @@ void test_exhaustive(
             u8 const * const * const frag_ptrs)
 {
     // Fragment buffer pointers
-    u8 frag_err_list[MMAX];
+    u8 frag_err_list[MMAX] = {0};
     int nerrs = 1;
     for (int i = 0; i < m; i++){
         frag_err_list[0] = i;
@@ -70,9 +70,9 @@ void test_random(
             u8 const * const * const frag_ptrs)
 {
     // Fragment buffer pointers
-    u8 frag_err_list[MMAX];
+    u8 frag_err_list[MMAX] = {0};
     // Generate errors
-    u8 shard_numbers[MMAX];
+    u8 shard_numbers[MMAX] = {0};
     for (int i = 0; i < MMAX; i++){
         shard_numbers[i] = i;
     }
@@ -97,10 +97,10 @@ int test_helper_progressive_2(
             const u8 *frag_err_list,
             u8 const * const * const frag_ptrs)
 {
-    u8 *decode_matrix = malloc(m * k);
-    u8 *g_tbls = malloc(k * p * 32);
-    u8 decode_index[MMAX];
-    const u8 * recover_srcs[KMAX];
+    u8 *decode_matrix = calloc(m * k, sizeof(u8));
+    u8 *g_tbls = calloc(k * p * 32, sizeof(u8));
+    u8 decode_index[MMAX] = {0};
+    const u8 * recover_srcs[KMAX] = {0};
     
     
 
@@ -108,7 +108,7 @@ int test_helper_progressive_2(
 
     if (encode_matrix == NULL || decode_matrix == NULL
         || g_tbls == NULL) {
-        printf("Test failure! Error with malloc\n");
+        printf("Test failure! Error with calloc\n");
         return -1;
     }
 
@@ -129,34 +129,36 @@ int test_helper_progressive_2(
     // Recover data
     ec_init_tables(k, nerrs, decode_matrix, g_tbls);
 
-    u8 **recover_outp_encode_update = allocate_matrix(KMAX, len);
+
+
+
+
+    u8 **recovered_shards = calloc_matrix(KMAX, len);
 
     for (int i = 0; i < k; i++){
-        ec_encode_data_update(len, k, nerrs, i, (const u8*)g_tbls, (const u8*)recover_srcs[i], recover_outp_encode_update);
+        ec_encode_data_update(len, k, nerrs, i, (const u8*)g_tbls, (const u8*)recover_srcs[i], recovered_shards);
     }
 
     // Check that buffers recovered via encode are the same as those recovered via update
     printf(" Comparing encode vs encode_update {");
-    print_matrix("recover_outp_encode_update", (const u8**)recover_outp_encode_update, nerrs, len);
+    print_matrix("recovered_shards", (const u8**)recovered_shards, nerrs, len);
     for (int i = 0; i < nerrs; i++) {
         printf(" %d", frag_err_list[i]);
         print_array("frag_ptrs", frag_ptrs[frag_err_list[i]], len);
-        if (memcmp(recover_outp_encode_update[i], frag_ptrs[frag_err_list[i]], len)) {
+        if (memcmp(recovered_shards[i], frag_ptrs[frag_err_list[i]], len)) {
             printf("ERROR xxx: Fail erasure recovery %d, frag %d\n", i, frag_err_list[i]);
             exit(-1);
         }
     }
+    print_matrix("Recovered Matrix recover_outp_encode_update", (const u8**)recovered_shards, nerrs, len);
 
+    free_matrix(recovered_shards, KMAX);
 
-
-
-    print_matrix("Recovered Matrix recover_outp_encode_update", (const u8**)recover_outp_encode_update, nerrs, len);
-
-    free_matrix(recover_outp_encode_update, KMAX);
 
     printf(" } done all: Pass\n");
     return 0;
 }
+
 
  
 
@@ -187,9 +189,10 @@ int test_helper_progressive_2(
 
 
 
+
 int main(int argc, char *argv[])
 {
-    int x = 9/0;
+    //int x = 9/0;
     srand(time(NULL));
     int k = 10, p = 4, len = 8;	// Default params
     int random_test = 0;
@@ -198,8 +201,8 @@ int main(int argc, char *argv[])
 	char* filepath = NULL;
 
     // Fragment buffer pointers
-    u8 *frag_ptrs_encode[MMAX];
-    u8 *frag_ptrs_encode_update[MMAX];
+    u8 *frag_ptrs_encode[MMAX] = {0};
+    u8 *frag_ptrs_encode_update[MMAX] = {0};
 
 
     // Coefficient matrices
@@ -252,20 +255,20 @@ int main(int argc, char *argv[])
     printf("ec_simple_example:\n");
 
     // Allocate coding matrices
-    encode_matrix = malloc(m * k);
-    g_tbls = malloc(k * p * 32);
+    encode_matrix = calloc(m * k, sizeof(u8));
+    g_tbls = calloc(k * p * 32, sizeof(u8));
 
     if (encode_matrix == NULL || g_tbls == NULL) {
-        printf("Test failure! Error with malloc\n");
+        printf("Test failure! Error with calloc\n");
         return -1;
     }
     // Allocate the src & parity buffers
     for (int i = 0; i < m; i++) {
-        if (NULL == (frag_ptrs_encode[i] = malloc(len))) {
+        if (NULL == (frag_ptrs_encode[i] = calloc(len, sizeof(u8)))) {
             printf("alloc 1 error: Fail\n");
             return -1;
         }
-        if (NULL == (frag_ptrs_encode_update[i] = malloc(len))) {
+        if (NULL == (frag_ptrs_encode_update[i] = calloc(len, sizeof(u8)))) {
             printf("alloc 2 error: Fail\n");
             return -1;
         }
@@ -296,7 +299,7 @@ int main(int argc, char *argv[])
 
     // Generate EC parity blocks using progressive encoding
     for (int i = 0; i < k; i++){
-        ec_encode_data_update(len, k, p, i, g_tbls, frag_ptrs_encode_update[i], &frag_ptrs_encode_update[k]);
+        ec_encode_data_update(len, k, p, i, g_tbls, (const u8*)frag_ptrs_encode_update[i], &frag_ptrs_encode_update[k]);
     }
 
 
@@ -330,5 +333,5 @@ int main(int argc, char *argv[])
     }
 
 
-
+    free(filepath);
 }

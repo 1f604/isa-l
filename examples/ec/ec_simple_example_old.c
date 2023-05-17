@@ -38,19 +38,6 @@
 
 typedef unsigned char u8;
 
-int usage(void)
-{
-	fprintf(stderr,
-		"Usage: ec_simple_example [options]\n"
-		"  -h        Help\n"
-		"  -k <val>  Number of source fragments\n"
-		"  -p <val>  Number of parity fragments\n"
-		"  -l <val>  Length of fragments\n"
-		"  -e <val>  Simulate erasure on frag index val. Zero based. Can be repeated.\n"
-		"  -r <seed> Pick random (k, p) with seed\n");
-	exit(0);
-}
-
 static int gf_gen_decode_matrix_simple(u8 * encode_matrix,
 				       u8 * decode_matrix,
 				       u8 * invert_matrix,
@@ -60,14 +47,15 @@ static int gf_gen_decode_matrix_simple(u8 * encode_matrix,
 
 int main(int argc, char *argv[])
 {
-	int i, j, m, c, e, ret;
-	int k = 10, p = 4, len = 8 * 1024;	// Default params
+	int i, j, m, ret;
+	int k = 200, p = 50, len = 8 * 1024;	// Default params
 	int nerrs = 0;
 
 	// Fragment buffer pointers
 	u8 *frag_ptrs[MMAX];
 	u8 *recover_srcs[KMAX];
 	u8 *recover_outp[KMAX];
+	u8 *recover_outp_encode_update[KMAX];
 	u8 frag_err_list[MMAX];
 
 	// Coefficient matrices
@@ -80,55 +68,28 @@ int main(int argc, char *argv[])
 		for (i = 0; i < p; i++)
 			frag_err_list[nerrs++] = rand() % (k + p);
 
-	while ((c = getopt(argc, argv, "k:p:l:e:r:h")) != -1) {
-		switch (c) {
-		case 'k':
-			k = atoi(optarg);
-			break;
-		case 'p':
-			p = atoi(optarg);
-			break;
-		case 'l':
-			len = atoi(optarg);
-			if (len < 0)
-				usage();
-			break;
-		case 'e':
-			e = atoi(optarg);
-			frag_err_list[nerrs++] = e;
-			break;
-		case 'r':
-			srand(atoi(optarg));
-			k = (rand() % (MMAX - 1)) + 1;	// Pick k {1 to MMAX - 1}
-			p = (rand() % (MMAX - k)) + 1;	// Pick p {1 to MMAX - k}
-
-			for (i = 0; i < k + p && nerrs < p; i++)
-				if (rand() & 1)
-					frag_err_list[nerrs++] = i;
-			break;
-		case 'h':
-		default:
-			usage();
-			break;
-		}
-	}
 	m = k + p;
+
+	srand(4); // picked 4 as the seed
+	k = (rand() % (MMAX - 1)) + 1;	// Pick k {1 to MMAX - 1}
+	p = (rand() % (MMAX - k)) + 1;	// Pick p {1 to MMAX - k}
+
+	for (i = 0; i < k + p && nerrs < p; i++)
+		if (rand() & 1)
+			frag_err_list[nerrs++] = i;
 
 	// Check for valid parameters
 	if (m > MMAX || k > KMAX || m < 0 || p < 1 || k < 1) {
 		printf(" Input test parameter error m=%d, k=%d, p=%d, erasures=%d\n",
 		       m, k, p, nerrs);
-		usage();
 	}
 	if (nerrs > p) {
 		printf(" Number of erasures chosen exceeds power of code erasures=%d p=%d\n",
 		       nerrs, p);
-		usage();
 	}
 	for (i = 0; i < nerrs; i++) {
 		if (frag_err_list[i] >= m) {
 			printf(" fragment %d not in range\n", frag_err_list[i]);
-			usage();
 		}
 	}
 
@@ -160,7 +121,17 @@ int main(int argc, char *argv[])
 			printf("alloc error: Fail\n");
 			return -1;
 		}
+		if (NULL == (recover_outp_encode_update[i] = malloc(len))) {
+			printf("alloc error: Fail\n");
+			return -1;
+		}
 	}
+	// Fill recover_outp with random data
+	for (i = 0; i < p; i++)
+		for (j = 0; j < len; j++){
+			recover_outp[i][j] = rand();
+			recover_outp_encode_update[i][j] = rand();
+		}
 
 	// Fill sources with random data
 	for (i = 0; i < k; i++)
@@ -200,6 +171,10 @@ int main(int argc, char *argv[])
 	ec_init_tables(k, nerrs, decode_matrix, g_tbls);
 	ec_encode_data(len, k, nerrs, g_tbls, recover_srcs, recover_outp);
 
+    for (i = 0; i < k; i++){
+        ec_encode_data_update(len, k, nerrs, i, (const u8*)g_tbls, (const u8*)recover_srcs[i], recover_outp_encode_update);
+    }
+
 	// Check that recovered buffers are the same as original
 	printf(" check recovery of block {");
 	for (i = 0; i < nerrs; i++) {
@@ -209,8 +184,19 @@ int main(int argc, char *argv[])
 			return -1;
 		}
 	}
+	printf(" } done encode: Pass\n");
 
-	printf(" } done all: Pass\n");
+	// Check that recovered buffers are the same as original for the update version
+	printf(" check recovery of block {");
+	for (i = 0; i < nerrs; i++) {
+		printf(" %d", frag_err_list[i]);
+		if (memcmp(recover_outp_encode_update[i], frag_ptrs[frag_err_list[i]], len)) {
+			printf(" Fail erasure recovery %d, frag %d\n", i, frag_err_list[i]);
+			return -1;
+		}
+	}
+
+	printf(" } done encode_update: Pass\n");
 	return 0;
 }
 

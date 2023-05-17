@@ -30,6 +30,7 @@
 src_include += -I $(srcdir)/examples/ec
 
 examples += examples/ec/ec_simple_example
+#examples += examples/ec/ec_simple_example_old
 examples += examples/ec/ec_piggyback_example
 
 #CFLAGS += -fsanitize=undefined 

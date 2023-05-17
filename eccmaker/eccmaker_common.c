@@ -180,17 +180,17 @@ void print_matrix(
 }
 
 
-u8** allocate_matrix(int num_rows, int row_length){ // num_rows should be p
+u8** malloc_matrix(int num_rows, int row_length){ // num_rows should be p
     // Allocate buffers for recovered data
     u8 **matrix;
 
     // The following is generic code that works regardless of the type of the elements in the matrix
-    if (NULL == (matrix = malloc(num_rows * sizeof(u8*)))) {
+    if (NULL == (matrix = malloc(num_rows * sizeof(*matrix)))) {
         printf("alloc error: Failed to allocate matrix\n");
         exit(-1);
     }
     for (int i = 0; i < num_rows; i++) {
-        if (NULL == (matrix[i] = malloc(row_length * sizeof(u8)))) {
+        if (NULL == (matrix[i] = malloc(row_length * sizeof(**matrix)))) {
             printf("alloc error: Failed to allocate row in matrix\n");
             exit(-1);
         }
@@ -199,8 +199,26 @@ u8** allocate_matrix(int num_rows, int row_length){ // num_rows should be p
 }
 
 
+u8** calloc_matrix(int num_rows, int row_length){ // num_rows should be p
+    // Allocate buffers for recovered data
+    u8 **matrix;
+
+    // The following is generic code that works regardless of the type of the elements in the matrix
+    if (NULL == (matrix = calloc(num_rows, sizeof(*matrix)))) {
+        printf("alloc error: Failed to allocate matrix\n");
+        exit(-1);
+    }
+    for (int i = 0; i < num_rows; i++) {
+        if (NULL == (matrix[i] = calloc(row_length, sizeof(**matrix)))) {
+            printf("alloc error: Failed to allocate row in matrix\n");
+            exit(-1);
+        }
+    }
+    return matrix;
+}
+
 void free_matrix(u8** matrix, int num_rows){
-    // Frees memory allocated by allocate_matrix
+    // Frees memory allocated by malloc_matrix or calloc_matrix
     // The following is generic code that works regardless of the type of the elements in the matrix
     for (int i = 0; i < num_rows; i++) {
         free(matrix[i]);

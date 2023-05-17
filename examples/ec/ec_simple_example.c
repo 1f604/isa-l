@@ -142,12 +142,12 @@ int test_helper(
             const u8 *frag_err_list,
             u8 const * const * const frag_ptrs)
 {
-    u8 *recover_outp_encode[KMAX];
-    u8 *recover_outp_encode_update[KMAX];
-    u8 *decode_matrix = malloc(m * k);
-    u8 *g_tbls = malloc(k * p * 32);
-    u8 decode_index[MMAX];
-    const u8 * recover_srcs[KMAX];
+    u8 *recover_outp_encode[KMAX] = {0};
+    u8 *recover_outp_encode_update[KMAX] = {0};
+    u8 *decode_matrix = calloc(m * k, sizeof(u8));
+    u8 *g_tbls = calloc(k * p * 32, sizeof(u8));
+    u8 decode_index[MMAX] = {0};
+    const u8 * recover_srcs[KMAX] = {0};
     
     
 

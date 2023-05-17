@@ -92,8 +92,8 @@ int recover_fragments_progressive(
             u8** output_buffer, // this is where the recovered shards will be stored
             u8 const * const * const frag_ptrs)
 {
-    u8 *decode_matrix = malloc(m * k);
-    u8 *g_tbls = malloc(k * p * 32);
+    u8 *decode_matrix = calloc(m * k, sizeof(u8));
+    u8 *g_tbls = calloc(k * p * 32, sizeof(u8));
     u8 decode_index[MMAX];
     const u8 * recover_srcs[KMAX];
     
@@ -101,7 +101,7 @@ int recover_fragments_progressive(
 
     if (encode_matrix == NULL || decode_matrix == NULL
         || g_tbls == NULL) {
-        printf("Test failure! Error with malloc\n");
+        printf("Test failure! Error with calloc\n");
         return -1;
     }
 

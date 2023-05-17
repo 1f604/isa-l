@@ -131,10 +131,22 @@ int recover_fragments_progressive(
 
 
 
-void recover_data(int m, int k, int nerrs, int len, u8* g_tbls, u8* decode_matrix,
-                    const u8** recover_srcs, u8** recover_outp_encode, u8** recover_outp_encode_update,
-                    u8 const * const * const frag_ptrs, u8* decode_index, const u8 *encode_matrix, const u8 *frag_err_list
+void recover_data(int m, int k, int p, int nerrs, int len, u8** recover_outp_encode, u8** recover_outp_encode_update,
+                    u8 const * const * const frag_ptrs, const u8 *encode_matrix, const u8 *frag_err_list
 ){
+    u8 *decode_matrix = calloc(m * k, sizeof(u8));
+    u8 *g_tbls = calloc(k * p * 32, sizeof(u8));
+    u8 decode_index[MMAX] = {0};
+    const u8 * recover_srcs[KMAX] = {0};
+
+    if (encode_matrix == NULL || decode_matrix == NULL
+        || g_tbls == NULL) {
+        printf("Test failure! Error with calloc\n");
+        exit(-1);
+    }
+
+    printf(" recover %d fragments\n", nerrs);
+
     // Find a decode matrix to regenerate all erasures from remaining frags
     int ret = gf_gen_decode_matrix_simple(encode_matrix, frag_err_list,
                                             decode_matrix, decode_index,
@@ -170,22 +182,9 @@ int test_helper(
     // Allocate buffers for recovered data
     u8 **recover_outp_encode = calloc_matrix(p, len);
     u8 **recover_outp_encode_update = calloc_matrix(p, len);
-    u8 *decode_matrix = calloc(m * k, sizeof(u8));
-    u8 *g_tbls = calloc(k * p * 32, sizeof(u8));
-    u8 decode_index[MMAX] = {0};
-    const u8 * recover_srcs[KMAX] = {0};
     
-    if (encode_matrix == NULL || decode_matrix == NULL
-        || g_tbls == NULL) {
-        printf("Test failure! Error with calloc\n");
-        exit(-1);
-    }
-
-    printf(" recover %d fragments\n", nerrs);
-
     // Recover data
-    recover_data(m, k, nerrs, len, g_tbls, decode_matrix, recover_srcs, recover_outp_encode, recover_outp_encode_update, frag_ptrs, decode_index,
-                    encode_matrix, frag_err_list);
+    recover_data(m, k, p, nerrs, len, recover_outp_encode, recover_outp_encode_update, frag_ptrs, encode_matrix, frag_err_list);
 
 
 

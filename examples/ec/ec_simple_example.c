@@ -131,9 +131,18 @@ int recover_fragments_progressive(
 
 
 
-void recover_data(int k, int nerrs, int len, u8* g_tbls, const u8* decode_matrix, const u8** recover_srcs, u8** recover_outp_encode, u8** recover_outp_encode_update,
-                    u8 const * const * const frag_ptrs, u8* decode_index
+void recover_data(int m, int k, int nerrs, int len, u8* g_tbls, u8* decode_matrix,
+                    const u8** recover_srcs, u8** recover_outp_encode, u8** recover_outp_encode_update,
+                    u8 const * const * const frag_ptrs, u8* decode_index, const u8 *encode_matrix, const u8 *frag_err_list
 ){
+    // Find a decode matrix to regenerate all erasures from remaining frags
+    int ret = gf_gen_decode_matrix_simple(encode_matrix, frag_err_list,
+                                            decode_matrix, decode_index,
+                                            nerrs, k, m);
+    if (ret != 0) {
+        printf("Fail on generate decode matrix\n");
+        exit(-1);
+    }
     // Pack recovery array pointers as list of valid fragments
     for (int i = 0; i < k; i++)
         recover_srcs[i] = frag_ptrs[decode_index[i]]; // we know that ec_encode_data doesn't modify the data...
@@ -174,16 +183,9 @@ int test_helper(
 
     printf(" recover %d fragments\n", nerrs);
 
-    // Find a decode matrix to regenerate all erasures from remaining frags
-    int ret = gf_gen_decode_matrix_simple(encode_matrix, frag_err_list, 
-                                            decode_matrix, decode_index,
-                                            nerrs, k, m);
-    if (ret != 0) {
-        printf("Fail on generate decode matrix\n");
-        exit(-1);
-    }
     // Recover data
-    recover_data(k, nerrs, len, g_tbls, decode_matrix, recover_srcs, recover_outp_encode, recover_outp_encode_update, frag_ptrs, decode_index);
+    recover_data(m, k, nerrs, len, g_tbls, decode_matrix, recover_srcs, recover_outp_encode, recover_outp_encode_update, frag_ptrs, decode_index,
+                    encode_matrix, frag_err_list);
 
 
 

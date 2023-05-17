@@ -131,8 +131,12 @@ int recover_fragments_progressive(
 
 
 
-void recover_data(int m, int k, int p, int nerrs, int len, u8** recover_outp_encode, u8** recover_outp_encode_update,
-                    u8 const * const * const frag_ptrs, const u8 *encode_matrix, const u8 *frag_err_list
+void recover_data(int k, int m, int p, int nerrs, int len,
+                    const u8 *encode_matrix,                    // input vector
+                    const u8 * const * const frag_ptrs,         // input matrix
+                    const u8 *frag_err_list,                    // input vector
+                    u8** recover_outp_encode,                   // output matrix
+                    u8** recover_outp_encode_update             // output matrix, MUST BE ZERO-INITIALIZED BY CALLER!!!!!!!!!!!
 ){
     u8 *decode_matrix = calloc(m * k, sizeof(u8));
     u8 *g_tbls = calloc(k * p * 32, sizeof(u8));
@@ -184,24 +188,12 @@ int test_helper(
     u8 **recover_outp_encode_update = calloc_matrix(p, len);
     
     // Recover data
-    recover_data(m, k, p, nerrs, len, recover_outp_encode, recover_outp_encode_update, frag_ptrs, encode_matrix, frag_err_list);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    recover_data(k, m, p, nerrs, len,
+                    encode_matrix,
+                    frag_ptrs,
+                    frag_err_list,
+                    recover_outp_encode,
+                    recover_outp_encode_update);
 
     // Check that recovered buffers are the same as original
     printf(" check recovery of block {");

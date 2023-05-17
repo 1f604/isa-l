@@ -31,7 +31,13 @@ src_include += -I $(srcdir)/examples/ec
 
 examples += examples/ec/ec_simple_example
 #examples += examples/ec/ec_simple_example_old
-examples += examples/ec/ec_piggyback_example
+#examples += examples/ec/ec_piggyback_example
+
+examples += examples/ec/create_ecc
+examples += examples/ec/test_ecc
+examples += examples/ec/recover_ecc
+
+
 
 #CFLAGS += -fsanitize=undefined 
 #CFLAGS += -static-libasan -g

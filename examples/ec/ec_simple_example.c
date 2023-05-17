@@ -338,7 +338,7 @@ int main(int argc, char *argv[])
 
     // Generate EC parity blocks using progressive encoding
     for (int i = 0; i < k; i++){
-        ec_encode_data_update(len, k, p, i, g_tbls, frag_ptrs_encode_update[i], &frag_ptrs_encode_update[k]);
+        ec_encode_data_update(len, k, p, i, (const u8*)g_tbls, (const u8*)frag_ptrs_encode_update[i], &frag_ptrs_encode_update[k]);
     }
 
 
